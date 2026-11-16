@@ -12,9 +12,15 @@ import {
   UserCircle,
   UserRound,
   Car,
+  Handshake,
+  Inbox,
+  BriefcaseBusiness,
+  Bell,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import { getUnreadNotificationCount } from "../services/notificationService";
+import { getSocket } from "../services/socketService";
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -22,6 +28,33 @@ function Navbar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await getUnreadNotificationCount();
+
+        if (isMounted && response.success) {
+          setUnreadCount(response.unreadCount ?? response.count ?? 0);
+        }
+      } catch (error) {
+        console.error("Unable to fetch unread notification count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+
+    const intervalId = setInterval(fetchUnreadCount, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // Reset image error when profile photo changes.
   useEffect(() => {
@@ -56,9 +89,24 @@ function Navbar() {
       icon: Car,
     },
     {
+      name: "My Exchanges",
+      path: "/my-exchange-requests",
+      icon: Handshake,
+    },
+    {
+      name: "Received Requests",
+      path: "/received-exchange-requests",
+      icon: Inbox,
+    },
+    {
       name: "My Profile",
       path: "/profile",
       icon: UserRound,
+    },
+    {
+      name: "My Services",
+      path: "/my-services",
+      icon: BriefcaseBusiness,
     },
   ];
 
@@ -130,6 +178,28 @@ function Navbar() {
           })}
         </div>
 
+        {/* Desktop Notifications */}
+        <NavLink
+          to="/notifications"
+          aria-label={`Notifications, ${unreadCount} unread`}
+          title="Notifications"
+          className={({ isActive }) =>
+            `relative flex h-10 w-10 items-center justify-center rounded-lg transition ${
+              isActive
+                ? "bg-emerald-50 text-emerald-700"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`
+          }
+        >
+          <Bell size={21} />
+
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </NavLink>
+
         {/* Desktop User and Logout */}
         <div className="hidden items-center gap-3 md:flex">
           <div className="flex items-center gap-2">
@@ -157,6 +227,28 @@ function Navbar() {
 
         {/* Mobile Profile Avatar and Menu Button */}
         <div className="flex items-center gap-3 md:hidden">
+          {/* Mobile Notifications */}
+          <NavLink
+            to="/notifications"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label={`Notifications, ${unreadCount} unread`}
+            title="Notifications"
+            className={({ isActive }) =>
+              `relative flex h-10 w-10 items-center justify-center rounded-lg transition ${
+                isActive
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <Bell size={21} />
+
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </NavLink>
 
           {/* Profile Photo */}
           <ProfileAvatar size="h-9 w-9" />

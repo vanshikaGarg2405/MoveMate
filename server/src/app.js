@@ -11,6 +11,7 @@ import rideRoutes from "./routes/rideRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import exchangeRoutes from "./routes/exchangeRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use("/api/v1/rides", rideRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
 app.use("/api/v1/services", serviceRoutes);
 app.use("/api/v1/exchanges", exchangeRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 // ==========================================
 // 7. UNKNOWN ROUTE HANDLER

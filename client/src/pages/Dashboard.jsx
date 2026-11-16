@@ -9,6 +9,7 @@ import {
   ArrowRight,
   UserRound,
   Users,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -72,10 +73,20 @@ function Dashboard() {
       description:
         "Exchange useful services and skills within your community.",
       icon: Handshake,
-      path: null,
+      path: "/marketplace",
       color: "bg-pink-100 text-pink-600",
-      available: false,
-      action: "Coming soon",
+      available: true,
+      action: "Explore marketplace",
+    },
+    {
+      title: "My Services",
+      description:
+        "View, edit and manage the services you offer to your community.",
+      icon: BriefcaseBusiness,
+      path: "/my-services",
+      color: "bg-emerald-100 text-emerald-600",
+      available: true,
+      action: "Manage my services",
     },
     {
       title: "My Rides",

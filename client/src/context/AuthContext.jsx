@@ -1,13 +1,32 @@
-import { createContext, useContext, useState, useEffect } from "react";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
+
 import api from "../services/api";
+
+import {
+  connectSocket,
+  disconnectSocket,
+} from "../services/socketService";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+
   const [token, setToken] = useState(
     () => sessionStorage.getItem("token")
   );
+
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // ==========================================
+  // 1. LOGIN
+  // ==========================================
 
   const login = async (credentials) => {
     const response = await api.post(
@@ -15,14 +34,20 @@ export const AuthProvider = ({ children }) => {
       credentials
     );
 
-    const { token, user } = response.data;
+    const { token: newToken, user: loggedInUser } =
+      response.data;
 
-    sessionStorage.setItem("token", token);
-    setToken(token);
-    setUser(user);
+    sessionStorage.setItem("token", newToken);
 
-    return user;
+    setToken(newToken);
+    setUser(loggedInUser);
+
+    return loggedInUser;
   };
+
+  // ==========================================
+  // 2. REGISTER
+  // ==========================================
 
   const register = async (userData) => {
     const response = await api.post(
@@ -33,13 +58,22 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
+  // ==========================================
+  // 3. LOGOUT
+  // ==========================================
+
   const logout = () => {
+    disconnectSocket();
+
     sessionStorage.removeItem("token");
+
     setToken(null);
     setUser(null);
   };
 
-  const [authLoading, setAuthLoading] = useState(true);
+  // ==========================================
+  // 4. RESTORE SESSION
+  // ==========================================
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -52,9 +86,13 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const response = await api.get("/users/me");
+
         setUser(response.data.user);
       } catch (error) {
+        disconnectSocket();
+
         sessionStorage.removeItem("token");
+
         setToken(null);
         setUser(null);
       } finally {
@@ -64,6 +102,27 @@ export const AuthProvider = ({ children }) => {
 
     restoreSession();
   }, []);
+
+  // ==========================================
+  // 5. SOCKET.IO CONNECTION
+  // ==========================================
+
+  useEffect(() => {
+    if (authLoading || !token) {
+      disconnectSocket();
+      return;
+    }
+
+    const socket = connectSocket(token);
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [token, authLoading]);
+
+  // ==========================================
+  // 6. AUTH CONTEXT
+  // ==========================================
 
   return (
     <AuthContext.Provider
@@ -75,7 +134,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: Boolean(token),
         login,
         register,
-        logout
+        logout,
       }}
     >
       {children}
